@@ -1,3 +1,5 @@
+#!/home/observer/miniconda2/bin/python
+
 import numpy as N
 import matplotlib.pyplot as M
 import argparse
@@ -8,7 +10,7 @@ import time
 from collections import namedtuple
 from parse_cfg import parse_cfg as pcfg
 
-P = pcfg("params.py")
+P = pcfg("params.cfg")
 
 consts = {
     'tfactor': int( P.tsamp / 0.00001024 ),                 #10.24 microseconds
@@ -254,6 +256,9 @@ def main(args):
     if not database_directory.endswith("/"):
 	database_directory += "/"
     order = "TF"
+    #if args.plot and args.Num > 1:
+    #  raise IOError("Sorry cannot plot more than one furby at a time")
+
     if not args.plot:
 	check_for_permissions(database_directory)
 	catalogue = database_directory+"furbies.cat"
@@ -427,6 +432,7 @@ def main(args):
 
 if __name__ == '__main__':
     a=argparse.ArgumentParser()
+    #a.add_argument("Num", type=int, help="Number of furbies to generate (def=1)", default=1)
     a.add_argument("-kind", type=str, help="Kind of frequency structure wanted. Options:[slope, smooth_envelope, two_peaks, three_peaks, ASKAP]")
     a.add_argument("-plot", action='store_true', help = "Plot the FRB instead of saving it?", default = False)
     a.add_argument("-dm", nargs='+', type=float, help="DM or DM range endpoints", default = 1000.0)
