@@ -1,4 +1,3 @@
-#!/home/observer/miniconda2/bin/python
 import numpy as N
 import matplotlib.pyplot as M
 import argparse
@@ -315,7 +314,6 @@ def main(args):
     #tau0 = 1.1
     
     nsamps_for_gaussian = int(5 * width)            # = half of nsamps required for the gaussian. i.e. The total nsamps will be 10 * sigma.
-    #nsamps_for_exponential = int(8 * tau0)
     nsamps_for_exponential = int(6 * tau0 * ((P.ftop+P.fbottom)/2 / P.fbottom)**P.scattering_index)
 
     if args.v:
@@ -324,7 +322,6 @@ def main(args):
     
     if args.v:
         print "Getting pure FRB"
-    #frb = get_pure_frb(snr=snr, width = width, nch=nch, nsamps=2*nsamps_for_gaussian)
     frb = get_pure_frb(snr=snr, width = width, nch=nch, nsamps=nsamps_for_gaussian)
     pure_signal = N.sum(frb.flatten())
     
