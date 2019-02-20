@@ -7,7 +7,6 @@ import glob
 import time
 
 from collections import namedtuple
-sys.path.append("/home/vgupta/Codes/")
 from parse_cfg import parse_cfg as pcfg
 
 P = pcfg("params.py")
