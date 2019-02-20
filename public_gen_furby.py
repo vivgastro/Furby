@@ -343,7 +343,6 @@ def main(args):
 
     if args.v:
         print "Dispersing"
-    #frb = disperse(frb, dm, pre_shift = nsamps_for_gaussian, nsamps=NSAMPS, dmsmear = args.dmsmear) #Remember, nsamps_for_gaussian is already half the number of samples
     frb, undispersed_tseries, NSAMPS = disperse(frb, dm, pre_shift = nsamps_for_gaussian,dmsmear = args.dmsmear) #Remember, nsamps_for_gaussian is already half the number of samples
     signal_after_disp = N.sum(frb.flatten())
 
@@ -354,10 +353,6 @@ def main(args):
     scrunched_frb = tscrunch(frb, C.tfactor)
     signal_after_scrunching = N.sum(scrunched_frb.flatten())
 
-    #sky_snr = snr * sky_signal/pure_signal	#This is wrong, since the width also changes significantly after convolution and we need to divide by Sqrt(W) while computing SNR
-    
-    #output_snr = snr * signal_after_scrunching/pure_signal
-    #Correction for the SNR. SKY_snr will have wrong values, ignore it if this correction is in place
     final_top_hat_width = signal_after_scrunching / maxima		#comes out in samples
     output_snr = signal_after_scrunching / (get_clean_noise_rms() * N.sqrt(nch) *  N.sqrt(final_top_hat_width) )
 
@@ -424,11 +419,6 @@ def main(args):
     if args.plot:
         if args.v:
             print "Plotting"
-        #M.figure()
-        #M.imshow(frb, aspect = 'auto', cmap = 'afmhot', interpolation='nearest')
-        #M.figure()
-        #M.plot(frb.mean(axis=0))
-        
         M.figure()
         M.imshow(scrunched_frb, aspect = 'auto', cmap = 'afmhot', interpolation='nearest')
         M.title("FRB")
@@ -442,11 +432,11 @@ if __name__ == '__main__':
     a=argparse.ArgumentParser()
     a.add_argument("-kind", type=str, help="Kind of frequency structure wanted. Options:[slope, smooth_envelope, two_peaks, three_peaks, ASKAP]")
     a.add_argument("-plot", action='store_true', help = "Plot the FRB instead of saving it?", default = False)
-    a.add_argument("-dm", nargs='+', type=float, help="DM or DM range", default = 1000.0)
-    a.add_argument("-snr", nargs='+', type=float, help="SNR or SNR range", default = 20.0)
-    a.add_argument("-width", nargs='+', type=float, help="Width or width range (in ms)", default = 2.0)
-    a.add_argument("-dmsmear", action='store_true', help = "Enable smearing within individual channels", default=False)
+    a.add_argument("-dm", nargs='+', type=float, help="DM or DM range endpoints", default = 1000.0)
+    a.add_argument("-snr", nargs='+', type=float, help="SNR or SNR range endpoints", default = 20.0)
+    a.add_argument("-width", nargs='+', type=float, help="Width or width range endpoints (in ms)", default = 2.0)
+    a.add_argument("-dmsmear", action='store_true', help = "Enable smearing within individual channels (def=False)", default=False)
     a.add_argument("-v", action='store_true', help="Verbose output", default = False)
-    a.add_argument("-D", type=str, help="Path to the database to which the furby should be added (def = ~dada/furby_database)", default = "/home/dada/furby_database")
+    a.add_argument("-D", type=str, help="Path to the database to which the furby should be added (def = ./)", default = "./")
     args= a.parse_args()
     main(args)
