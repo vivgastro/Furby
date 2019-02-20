@@ -1,5 +1,3 @@
-#!/home/observer/miniconda2/bin/python
-
 import sys, os
 sys.path.append("/home/vgupta/Codes")
 from check_type import check_type as ctp

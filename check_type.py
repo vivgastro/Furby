@@ -1,5 +1,3 @@
-#!/home/observer/miniconda2/bin/python
-
 def check_type(val):
     try:
       ans=int(val)
