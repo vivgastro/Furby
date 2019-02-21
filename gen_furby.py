@@ -13,7 +13,7 @@ from parse_cfg import parse_cfg as pcfg
 P = pcfg("params.cfg")
 
 consts = {
-    'tfactor': int( P.tsamp / 0.00001024 ),                 #10.24 microseconds
+    'tfactor': int( P.tsamp / 0.00004096 ),               #40.96 microseconds
     'ffactor': int( ((P.ftop-P.fbottom)/P.nch)/0.1),      #We dont want dmsmear to be approximated beyond 5 kHz chw. So ffactor = chw/ 0.005
     }
 
