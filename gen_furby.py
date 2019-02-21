@@ -159,7 +159,7 @@ def disperse(frb, dm, pre_shift, dmsmear):
     idxs = N.arange(nsamps)
 
     if args.v:
-      print "Initial frb shape", frb.shape, "nsamps:",nsamps, "\ndelays:", delays_in_samples, "\nstart, end",start, end, "Tfactor, Ffactor, pre_shift", C.tfactor, ffactor, pre_shift
+      print "Initial frb shape", frb.shape, "nsamps:",nsamps, "\nstart, end",start, end, "Tfactor, Ffactor, pre_shift", C.tfactor, ffactor, pre_shift
 
     for i in range(nch):
       if args.v:
