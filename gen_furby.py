@@ -115,7 +115,7 @@ def create_freq_structure(frb, kind):
         z6 = nch
         f = -1 * (x-z1) * (x-z2) * (x-z3) * (x-z4) * (x-z5) * (x-z6)
     if kind == 'ASKAP':
-        n_blobs = N.floor(N.random.exponential(scale = 1.5, size=1)) + 1
+        n_blobs = N.floor(N.random.exponential(scale = 3, size=1)) + 1
         f = N.zeros(nch)
         for i in range(n_blobs):
             center_of_blob = N.random.uniform(0, nch, 1)
