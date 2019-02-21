@@ -169,7 +169,7 @@ def disperse(frb, dm, pre_shift, dmsmear):
       dispersed_frb[i, start+delay: end+delay] += frb[int(i/ffactor)]
       undispersed_time_series += N.take(dispersed_frb[i], idxs + delays_in_samples[mid_channel_course], mode='wrap')
     final_dispersed_frb = fscrunch(dispersed_frb, ffactor)
-    return final_dispersed_frb, undispersed_time_series, nsamps
+    return final_dispersed_frb, undispersed_time_series, nsamps/C.tfactor
 
 
 def scatter(frb, tau0, nsamps): 
