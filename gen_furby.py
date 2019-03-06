@@ -13,8 +13,8 @@ from parse_cfg import parse_cfg as pcfg
 P = pcfg("params.cfg")
 
 consts = {
-    'tfactor': int( P.tsamp / 0.00004096 ),               #40.96 microseconds
-    'ffactor': int( ((P.ftop-P.fbottom)/P.nch)/0.1),      #We dont want dmsmear to be approximated beyond 5 kHz chw. So ffactor = chw/ 0.005
+    'tfactor': int( P.tsamp / 0.00001024 ),               #40.96 microseconds
+    'ffactor': int( ((P.ftop-P.fbottom)/P.nch)/0.01),      #We dont want dmsmear to be approximated beyond 5 kHz chw. So ffactor = chw/ 0.005
     }
 
 tmp = namedtuple("co", consts.keys())
@@ -75,17 +75,37 @@ def get_pure_frb(snr, width, nch, nsamps):
 
     desired_signal = snr_per_channel * clean_noise_rms * N.sqrt(W_tophat_gauss)
 
-    x=N.arange(nsamps * C.tfactor) 
+    x=N.arange(int(nsamps * C.tfactor) )
     width = width * C.tfactor
     pure_frb_single_channel = gauss2(x, desired_signal, int(len(x)/2), width)
 
-    assert N.abs(N.sum(pure_frb_single_channel) - desired_signal) < desired_signal/100., "The generated signal is off by more than 1% of the desired value, desired_signal = {0}, generated_signal = {1}".format(desired_signal, N.sum(pure_frb_single_channel))
+    if N.abs(N.sum(pure_frb_single_channel) - desired_signal) > desired_signal/20.:
+      raise RuntimeError("The generated signal is off by more than 5% of the desired value, desired_signal = {0}, generated_signal = {1}. Diff: {2}%".format(desired_signal, N.sum(pure_frb_single_channel), ((N.sum(pure_frb_single_channel) - desired_signal)/desired_signal * 100) ))
 
     pure_frb = N.array([pure_frb_single_channel] * nch)     #Copying single channel nch times as a 2D array
     
     assert pure_frb.shape[0] == nch, "Could not copy 1D array {0} times".format(nch)
     
     return pure_frb
+
+def get_bandpass(nch):
+    bp = N.loadtxt("/home/vgupta/resources/BANDPASS_normalized_320chan.cfg")
+    if nch == 320:
+        pass
+    elif nch == 40:
+        bp = tscrunch(bp, 8) / 8.
+    else:
+        raise ValueError("NCHAN expected: [40 or 320]. Got: {0}".format(str(nch)))
+    return bp*1./bp.max()
+
+def apply_bandpass(frb):
+    nch = frb.shape[0]
+    bp = get_bandpass(nch)
+    bp = bp/bp.max()
+    #bp = bp - bp.mean() +1
+
+    frb = frb * bp.reshape(-1,1)
+    return frb
 
 def create_freq_structure(frb, kind):
     nch = frb.shape[0]
@@ -151,7 +171,7 @@ def disperse(frb, dm, pre_shift, dmsmear):
 
     #nsamps = delays_in_samples[-1] - delays_in_samples[0] + 2*frb.shape[1]
     nsamps = delays_in_samples[-1]*2 + 2*frb.shape[1]
-    start = nsamps/2 - pre_shift*C.tfactor
+    start = nsamps/2 - int(pre_shift*C.tfactor)
     end = start + frb.shape[1]
 
     dispersed_frb = N.zeros(nch * nsamps).reshape(nch, nsamps)
@@ -159,7 +179,7 @@ def disperse(frb, dm, pre_shift, dmsmear):
     idxs = N.arange(nsamps)
 
     if args.v:
-      print "Initial frb shape", frb.shape, "nsamps:",nsamps, "\nstart, end",start, end, "Tfactor, Ffactor, pre_shift", C.tfactor, ffactor, pre_shift
+      print "Initial frb shape", frb.shape, "nsamps:",nsamps, "\nstart, end",start, end, "Tfactor, Ffactor, pre_shift", C.tfactor, ffactor, int(pre_shift)
 
     for i in range(nch):
       if args.v:
@@ -169,7 +189,7 @@ def disperse(frb, dm, pre_shift, dmsmear):
       dispersed_frb[i, start+delay: end+delay] += frb[int(i/ffactor)]
       undispersed_time_series += N.take(dispersed_frb[i], idxs + delays_in_samples[mid_channel_course], mode='wrap')
     final_dispersed_frb = fscrunch(dispersed_frb, ffactor)
-    return final_dispersed_frb, undispersed_time_series, nsamps/C.tfactor
+    return final_dispersed_frb, undispersed_time_series/C.ffactor, nsamps/C.tfactor
 
 
 def scatter(frb, tau0, nsamps): 
@@ -287,7 +307,8 @@ def main(args):
     elif isinstance(args.width, list) and len(args.width) ==1:
       widths = int(args.width[0]*1e-3/P.tsamp) * N.ones(args.Num)
     elif isinstance(args.width, list) and len(args.width) ==2:
-      widths = N.random.randint(args.width[0]*1e-3/P.tsamp,args.width[1]*1e-3/P.tsamp, args.Num)   #samples
+      #widths = N.random.randint(args.width[0]*1e-3/P.tsamp,args.width[1]*1e-3/P.tsamp, args.Num)   #samples
+      widths = N.random.uniform(args.width[0]*1e-3/P.tsamp,args.width[1]*1e-3/P.tsamp, args.Num)   #samples
     else:
       raise IOError("Invalid input for Width")
     #width =3
@@ -321,10 +342,10 @@ def main(args):
               continue
           else:
               break
-      tau0 = N.abs(N.random.normal(loc = dm / 600., scale = 3, size=1))[0] 
+      tau0 = N.abs(N.random.normal(loc = dm / 800., scale = 3, size=1))[0] 
       #tau0 = 1.1
       
-      nsamps_for_gaussian = int(5 * width)            # = half of nsamps required for the gaussian. i.e. The total nsamps will be 10 * sigma.
+      nsamps_for_gaussian = 5 * width            # = half of nsamps required for the gaussian. i.e. The total nsamps will be 10 * sigma.
       nsamps_for_exponential = int(6 * tau0 * ((P.ftop+P.fbottom)/2 / P.fbottom)**P.scattering_index)
 
       if args.v:
@@ -333,7 +354,12 @@ def main(args):
       
       if args.v:
           print "Getting pure FRB"
-      frb = get_pure_frb(snr=snr, width = width, nch=nch, nsamps=nsamps_for_gaussian)
+      try:
+        frb = get_pure_frb(snr=snr, width = width, nch=nch, nsamps=nsamps_for_gaussian)
+      except RuntimeError as R:
+        print R
+        continue
+
       pure_signal = N.sum(frb.flatten())
       
       if args.v:
@@ -351,6 +377,10 @@ def main(args):
       sky_frb_peak = N.max( tscrunch(sky_frb_tseries, C.tfactor)   )
       sky_frb_top_hat_width = sky_signal / sky_frb_peak
       sky_snr = sky_signal / ( get_clean_noise_rms() * N.sqrt(nch) * N.sqrt(sky_frb_top_hat_width) )
+
+      if args.v:
+        print "Applying Bandpass"
+      frb = apply_bandpass(frb)
 
       if args.v:
           print "Dispersing"

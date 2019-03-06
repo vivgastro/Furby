@@ -27,5 +27,5 @@ A helper code to help with parsing configuration files
 
 ### params.cfg
 
-A config file containing the parameters of a receiving system which will be matched in the generated furby
+A config file containing the parameters of a receiving system which will be matched in the generated furby.
 Noise_per_channel is an important parameter and this will dictate how much signal is put into the furby to generate the required snr
