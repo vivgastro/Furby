@@ -1,5 +1,4 @@
 import sys, os
-sys.path.append("/home/vgupta/Codes")
 from check_type import check_type as ctp
 from collections import namedtuple
 
