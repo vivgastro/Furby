@@ -112,6 +112,8 @@ def create_freq_structure(frb, kind):
     x = N.arange(nch)
     #kind of scintillation
     
+    if kind == 'flat':
+        f = N.ones(nch)
     if kind == 'slope':
         slope = N.random.uniform(-0.5*nch, 0.5*nch, 1)  #Slope will be a random number between -0.5 and 0.5
         f = x * slope
@@ -145,9 +147,10 @@ def create_freq_structure(frb, kind):
             amp_of_blob = N.random.uniform(1, 3, 1)             #For just one blob (n_blobs=1), this does not matter because we rescale the maxima to 1 evetually. For more than one blobs, this random amp will set the relative power in different blobs. So, the power in weakest blob can be as low as 1/3rd of the strongest blob)
             f += gauss(x, amp_of_blob, center_of_blob, width_of_blob)
             
-    f = f - f.min()                                     #Bringing the minima to 0
-    f = f * 1./f.max()                                  #Bringing the maxima to 1
-    f = f - f.mean() + 1                                #Shifting the mean to 1
+    if kind != 'flat':
+      f = f - f.min()                                     #Bringing the minima to 0
+      f = f * 1./f.max()                                  #Bringing the maxima to 1
+      f = f - f.mean() + 1                                #Shifting the mean to 1
 
     frb = frb * f.reshape(-1, 1)
     return frb, f
@@ -299,7 +302,7 @@ def main(args):
         print "Starting FRB Generator..."
     tsamp = P.tsamp                              #seconds
     nch = P.nch
-    supported_kinds = ["slope", "smooth_envelope", "two_peaks", "three_peaks", "ASKAP"]
+    supported_kinds = ["flat", "slope", "smooth_envelope", "two_peaks", "three_peaks", "ASKAP"]
     
     if isinstance(args.snr, float):
       snrs = args.snr * N.ones(args.Num)
@@ -353,7 +356,10 @@ def main(args):
               continue
           else:
               break
-      tau0 = N.abs(N.random.normal(loc = dm / 1000., scale = 2, size=1))[0] 
+      if args.scatter:
+        tau0 = N.abs(N.random.normal(loc = dm / 1000., scale = 2, size=1))[0] 
+      else:
+        tau0 = 0
       #tau0 = 10.1/C.tfactor
       
       nsamps_for_gaussian = 5 * width            # = half of nsamps required for the gaussian. i.e. The total nsamps will be 10 * sigma.
@@ -517,6 +523,7 @@ if __name__ == '__main__':
     a.add_argument("-snr", nargs='+', type=float, help="SNR or SNR range endpoints", default = 20.0)
     a.add_argument("-width", nargs='+', type=float, help="Width or width range endpoints (in ms)", default = 2.0)
     a.add_argument("-dmsmear", action='store_true', help = "Enable smearing within individual channels (def=False)", default=False)
+    a.add_argument("-scatter", action='store_true', help='Enable scattering (def = False)', default=False)
     a.add_argument("-v", action='store_true', help="Verbose output", default = False)
     a.add_argument("-D", type=str, help="Path to the database to which the furby should be added (def = ./)", default = "./")
     args= a.parse_args()
