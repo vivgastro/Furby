@@ -13,8 +13,8 @@ from parse_cfg import parse_cfg as pcfg
 P = pcfg("params.cfg")
 
 consts = {
-    'tfactor': int( P.tsamp / 0.00001024 ),               #40.96 microseconds
-    'ffactor': int( ((P.ftop-P.fbottom)/P.nch)/0.01),      #We dont want dmsmear to be approximated beyond 5 kHz chw. So ffactor = chw/ 0.005
+    'tfactor': int( P.tsamp / 0.00001024 ),               #10.24 microseconds
+    'ffactor': int( ((P.ftop-P.fbottom)/P.nch)/0.01),      #We dont want dmsmear to be approximated beyond 10 kHz chw. So ffactor = chw/ 0.010
     }
 
 tmp = namedtuple("co", consts.keys())
@@ -248,6 +248,20 @@ def get_FWHM(frb_tseries):
     assert FWHM>0, "FWHM calculation went wrong somewhere. HPP points, maxx point and FWHM are {0} {1} {2} {3}".format(hpp1, hpp2, maxx, FWHM)
     return FWHM, N.max(tscrunch(frb_tseries, C.tfactor))
 
+
+def get_matched_filter_snr(tseries):
+  '''
+  Computes the matched filter snr for a given time series.
+  This method only works if we assume that noise is absolutely white and has no covariance.
+  '''
+  #First, we have to normalise the time series such that the rms of the noise is 1
+  normalised_tseries = tseries / (P.nch**0.5 * P.noise_per_channel)
+
+  #Now the matched filter SNR is simply the quadrature sum of the SNRs of individual samples
+  snr = N.sqrt(N.sum(normalised_tseries**2))
+  return snr
+
+
 def start_logging(ctl, db_d):
     if os.path.exists(ctl):
 	logger = open(ctl, 'a')
@@ -431,8 +445,10 @@ def main(args):
       final_top_hat_width = signal_after_scrunching / N.max(undispersed_tseries) / C.tfactor
       output_snr = signal_after_scrunching / (get_clean_noise_rms() * N.sqrt(nch) *  N.sqrt(final_top_hat_width) )
 
+      matched_filter_snr = get_matched_filter_snr(tscrunch(undispersed_tseries, C.tfactor))
+
       if args.v:
-          print "Input signal, Sky_signal, Output signal, Input SNR, Sky SNR, Output SNR, Final_top_hat_width",  pure_signal, sky_signal, signal_after_scrunching, snr, sky_snr, output_snr, final_top_hat_width * tsamp * 1e3, "ms\n"
+          print "Input signal, Sky_signal, Output signal, Input SNR, Sky SNR, Output SNR, Matched filter SNR, Final_top_hat_width",  pure_signal, sky_signal, signal_after_scrunching, snr, sky_snr, output_snr, matched_filter_snr, final_top_hat_width * tsamp * 1e3, "ms\n"
       
       final_frb = scrunched_frb.astype('float32')
 
@@ -463,6 +479,7 @@ def main(args):
               "INSTRUMENT":   "MOPSR",
               "SNR":  output_snr,
               "SKY_SNR":  sky_snr,
+              "MATCHED_FILTER_SNR": matched_filter_snr,
       	      "WIDTH":	final_top_hat_width*tsamp*1e3,	#milliseconds
               "SIGNAL":   signal_after_scrunching,
               "SKY_SIGNAL":   sky_signal,
