@@ -175,7 +175,9 @@ def disperse(frb, dm, pre_shift, dmsmear):
 
     #nsamps = delays_in_samples[-1] - delays_in_samples[0] + 2*frb.shape[1]
     #nsamps = delays_in_samples[-1]*2 + 2*frb.shape[1]
-    nsamps = 9000 * C.tfactor
+    
+    nsamps = P.tot_nsamples * C.tfactor
+    #nsamps = 9000 * C.tfactor
     start = nsamps/2 - int(pre_shift*C.tfactor)
     end = start + frb.shape[1]
 
