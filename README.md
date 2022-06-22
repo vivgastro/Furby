@@ -1,5 +1,6 @@
 # Furby
 Mock FRB generator (requires python2.7)
+Checkout (https://github.com/vivgastro/Furby_p3) for a python3 version of this repository -- which is also being actively developed further.
 
 ### gen_furby.py
 
